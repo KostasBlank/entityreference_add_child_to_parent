@@ -1,0 +1,6 @@
+name = Entity Reference add child to parent
+description = Allows creation of entities that will automatically be referenced by their parent.
+package = Other
+dependencies[] = entity
+dependencies[] = entityreference
+core = 7.x
