@@ -73,7 +73,7 @@ function _entityreference_add_child_to_parent_field_settings_form_submit($form, 
       variable_set('entityreference_add_child_to_parent_entity_types', $mymodule_types);
     }
   }
-dpm($mymodule_types, '$mymodule_types');
+//dpm($mymodule_types, '$mymodule_types');
 }
 
 /**
