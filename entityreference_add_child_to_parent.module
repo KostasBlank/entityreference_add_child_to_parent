@@ -3,7 +3,6 @@
 /**
  * @file
  * Entity Reference add child to parent.
- * @todo On entity/bundle and field deletion deal with variable.
  */
 
 /**
@@ -74,6 +73,7 @@ function _entityreference_add_child_to_parent_field_settings_form_submit($form, 
       variable_set('entityreference_add_child_to_parent_entity_types', $mymodule_types);
     }
   }
+dpm($mymodule_types, '$mymodule_types');
 }
 
 /**
@@ -223,4 +223,30 @@ function entityreference_add_child_to_parent_entity_insert($entity, $type) {
   }
 
 //throw new Exception("Custom Exception to stop code execution");
+}
+
+/**
+ * Implements hook_field_delete_instance().
+ *
+ * Removes the entityreference_add_child_to_parent value from the
+ * entityreference_add_child_to_parent_entity_types variable.
+ */
+function entityreference_add_child_to_parent_field_delete_instance($instance) {
+  // Only act on entity reference fields.
+  $field = field_read_field($instance ['field_name']);
+  if ($field ['type'] != 'entityreference') {
+    return;
+  }
+
+  $entity_type = $instance['entity_type'];
+  $bundle = $instance['bundle'];
+  $field_name = $instance['field_name'];
+
+  $mymodule_types = variable_get('entityreference_add_child_to_parent_entity_types', array());
+  if (isset($mymodule_types[$entity_type][$bundle]) && in_array($field_name, $mymodule_types[$entity_type][$bundle]) ) {
+    $mymodule_types[$entity_type][$bundle] = array_diff($mymodule_types[$entity_type][$bundle], array($field_name));
+    $mymodule_types[$entity_type] = array_filter($mymodule_types[$entity_type]);
+    $mymodule_types = array_filter($mymodule_types);
+    variable_set('entityreference_add_child_to_parent_entity_types', $mymodule_types);
+  }
 }
