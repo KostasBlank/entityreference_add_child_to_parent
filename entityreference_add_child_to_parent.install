@@ -1,0 +1,8 @@
+<?php
+
+/**
+ * Implements hook_uninstall().
+ **/
+function entityreference_add_child_to_parent_uninstall() {
+  variable_del('entityreference_add_child_to_parent_entity_types');
+}
