@@ -174,6 +174,10 @@ function entityreference_add_child_to_parent_entity_insert($entity, $type) {
   $eid = (isset($params['eid'])) ? check_plain($params['eid']) : '';
   $field = (isset($params['field'])) ? check_plain($params['field']) : '';
 
+  if (empty($type) || empty($eid) || empty($field) ) {
+    return;
+  }
+
   // Check that the field can be found in the variable:
   // entityreference_add_child_to_parent_entity_types. If not provide an error
   // message and do not reference this entity in the parent entity.
