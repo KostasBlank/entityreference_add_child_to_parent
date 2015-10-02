@@ -126,6 +126,7 @@ function entityreference_add_child_to_parent_entity_view($entity, $type, $view_m
 
         $entity_info = entity_get_info($field_entity);
         $entity_label = $entity_info['label'];
+        list($entity_indentifier) = entity_extract_ids($entity_type, $entity);        
 
         // Get path. Every entity type needs special handling as there is no API
         // that returns the entitie's add entity path.
@@ -145,7 +146,7 @@ function entityreference_add_child_to_parent_entity_view($entity, $type, $view_m
         $query = array(
           'type' => $entity_type,
           'bundle' => $entity_bundle,
-          'eid' => $entity->id,
+          'eid' => $entity_indentifier,
           'field' => $field_name,
         );
         $query += drupal_get_destination();
@@ -210,13 +211,13 @@ function entityreference_add_child_to_parent_entity_insert($entity, $type) {
       drupal_set_message(t('Invalid Entity id. The newly created entity is not referenced by its parent.'), 'error');
       return;
     }
-    $entity_wrapper = entity_metadata_wrapper($type, $eid);
-
+    $entity_wrapper = entity_metadata_wrapper($type, $eid);    
+    //Get Identifier of newly created bundle   
+    list($entity_indentifier) = entity_extract_ids($field_type, $entity);        
     if ($entity_wrapper->value()) {
-      dpm('have identifier');
-      if (isset($entity_wrapper->{$field}) && $entity_wrapper->{$field}->validate(array($entity->id))) {
-        dpm('does validate');
-        $entity_wrapper->{$field}[] = $entity->id;
+      // test if Parent has field and that the value is valid
+      if (isset($entity_wrapper->{$field}) && $entity_wrapper->{$field}->validate(array($entity_indentifier))) {
+        $entity_wrapper->{$field}[] = $entity_indentifier;
         $entity_wrapper->save();
       }
     }
