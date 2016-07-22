@@ -13,7 +13,7 @@ function entityreference_add_child_to_parent_form_field_ui_field_edit_form_alter
     return;
   }
 
-  $form['instance']['add_child_to_parent_link']= array(
+  $form['instance']['add_child_to_parent_link'] = array(
     '#type' => 'checkbox',
     '#title' => 'Provide a pseudofield link to add the referenced entity and reference parent entity',
     '#description' => 'Check this option if you want a pseudo field to appear in the display settings of this entity that allows to create a referenced entity that will automatically be referenced by this (parent) entity. If this option is set exactly one bundle must be specified in the field settings.',
@@ -29,6 +29,7 @@ function entityreference_add_child_to_parent_form_field_ui_field_edit_form_alter
 
 /**
  * Extra validate function for field_ui_field_edit_form.
+ *
  * Ensure that exactly one bundle is set.
  */
 function _entityreference_add_child_to_parent_field_settings_form_validate($form, &$form_state) {
@@ -45,6 +46,7 @@ function _entityreference_add_child_to_parent_field_settings_form_validate($form
 
 /**
  * Extra submit function for field_ui_field_edit_form.
+ *
  * Populate the entityreference_add_child_to_parent_entity_types variable.
  */
 function _entityreference_add_child_to_parent_field_settings_form_submit($form, &$form_state) {
@@ -55,10 +57,11 @@ function _entityreference_add_child_to_parent_field_settings_form_submit($form, 
 
   $mymodule_types = variable_get('entityreference_add_child_to_parent_entity_types', array());
 
-  // Decide whether to add the setting to the variable entityreference_add_child_to_parent_entity_types.
+  // Decide whether to add the setting to the variable
+  // entityreference_add_child_to_parent_entity_types.
   if (isset($mymodule_types[$entity][$bundle]) && in_array($field, $mymodule_types[$entity][$bundle])) {
     if ($add_child_to_parent_link !== 1) {
-      // Is in variable but not in form: Remove it and flush cache
+      // Is in variable but not in form: Remove it and flush cache.
       $mymodule_types[$entity][$bundle] = array_diff($mymodule_types[$entity][$bundle], array($field));
       // Cleanup array if necessary.
       $mymodule_types[$entity] = array_filter($mymodule_types[$entity]);
@@ -68,12 +71,12 @@ function _entityreference_add_child_to_parent_field_settings_form_submit($form, 
   }
   else {
     if ($add_child_to_parent_link === 1) {
-      // Is not in variable but is in form: Add it and flush cache
+      // Is not in variable but is in form: Add it and flush cache.
       $mymodule_types[$entity][$bundle][] = $field;
       variable_set('entityreference_add_child_to_parent_entity_types', $mymodule_types);
     }
   }
-//dpm($mymodule_types, '$mymodule_types');
+  // dpm($mymodule_types, '$mymodule_types');
 }
 
 /**
@@ -84,14 +87,14 @@ function entityreference_add_child_to_parent_field_extra_fields() {
 
   $mymodule_types = variable_get('entityreference_add_child_to_parent_entity_types', array());
 
-  $add_link =  array(
+  $add_link = array(
     'label' => t('Add entity link'),
-    'description' => t('A link to add an entity and populate the parent\'s reference field.'),
+    'description' => t("A link to add an entity and populate the parent's reference field."),
     'weight' => -115,
   );
   foreach ($mymodule_types as $entity => $bundles) {
-    foreach($bundles as $bundle => $fields) {
-      foreach($fields as $field) {
+    foreach ($bundles as $bundle => $fields) {
+      foreach ($fields as $field) {
         $extra[$entity][$bundle]['display']['entityreference_add_child_link_' . $field] = $add_link;
         $extra[$entity][$bundle]['display']['entityreference_add_child_link_' . $field]['label'] .= ' for ' . $field;
       }
@@ -103,6 +106,7 @@ function entityreference_add_child_to_parent_field_extra_fields() {
 
 /**
  * Implements hook_entity_view().
+ *
  * Generates markup for the pseudofields.
  */
 function entityreference_add_child_to_parent_entity_view($entity, $type, $view_mode, $langcode) {
@@ -111,29 +115,32 @@ function entityreference_add_child_to_parent_entity_view($entity, $type, $view_m
   $title = entity_label($entity_type, $entity);
 
   $extrafields = field_extra_fields_get_display($entity_type, $entity_bundle, $view_mode);
-  foreach($extrafields as $extrafield_name => $extrafield) {
+  foreach ($extrafields as $extrafield_name => $extrafield) {
     if (strpos($extrafield_name, 'entityreference_add_child_link') !== FALSE) {
       if ($extrafield['visible']) {
         $weight = $extrafield['weight'];
 
         // Get field name.
         $pos = strlen('entityreference_add_child_link');
-        $field_name = substr($extrafield_name, $pos +1);
+        $field_name = substr($extrafield_name, $pos + 1);
 
         $field_info = field_info_field($field_name);
+
         $field_entity = $field_info['settings']['target_type'];
         $field_bundle = reset($field_info['settings']['handler_settings']['target_bundles']);
 
         $entity_info = entity_get_info($field_entity);
+        $bundle_label = $entity_info['bundles'][$field_bundle]['label'];
         $entity_label = $entity_info['label'];
 
         // Get path. Every entity type needs special handling as there is no API
         // that returns the entitie's add entity path.
         // Currently it only supports node and ECK entities.
         if ($field_entity == 'node') {
-          $path = 'node/add/' . $field_bundle;
+          $path = 'node/add/' . str_replace('_', '-', $field_bundle);
         }
-        else if (isset($entity_info['bundles'][$field_bundle]['crud']['add']['path'])) { // ECK entities.
+        // ECK entities.
+        elseif (isset($entity_info['bundles'][$field_bundle]['crud']['add']['path'])) {
           $path = $entity_info['bundles'][$field_bundle]['crud']['add']['path'];
         }
         else {
@@ -141,30 +148,40 @@ function entityreference_add_child_to_parent_entity_view($entity, $type, $view_m
           // @todo for other entity types.
         }
 
-        // Prepare link.
-        $query = array(
-          'type' => $entity_type,
-          'bundle' => $entity_bundle,
-          'eid' => $entity->id,
-          'field' => $field_name,
-        );
-        $query += drupal_get_destination();
-        $add_link = l('Add ' . $entity_label . ' for ' . $title, $path, array(
-          'attributes' => array(),
-          'query' => $query,
-        ));
+        // Access control.
+        if (drupal_valid_path($path)) {
+          $entity_ids = entity_extract_ids($entity_type, $entity);
+          // Prepare link.
+          $query = array(
+            'type' => $entity_type,
+            'bundle' => $entity_bundle,
+            'eid' => $entity_ids[0],
+            'field' => $field_name,
+          );
+          $query += drupal_get_destination();
+          $add_link = l(t('Add @bundle_label for @title', array(
+              '@bundle_label' => $bundle_label,
+              '@title' => $title,
+            )),
+            $path, array(
+              'attributes' => array(),
+              'query' => $query,
+            ));
 
-        $entity->content[$extrafield_name] = array(
-          '#markup' => $add_link,
-          '#weight' => $weight,
-        );
+          $entity->content[$extrafield_name] = array(
+            '#markup' => $add_link,
+            '#weight' => $weight,
+          );
+        }
+
       }
     }
   }
 }
 
 /**
- * Implements hook_entity_insert.
+ * Implements hook_entity_insert().
+ *
  * Adds the reference to the parent entity and saves it.
  */
 function entityreference_add_child_to_parent_entity_insert($entity, $type) {
@@ -174,7 +191,10 @@ function entityreference_add_child_to_parent_entity_insert($entity, $type) {
   $eid = (isset($params['eid'])) ? check_plain($params['eid']) : '';
   $field = (isset($params['field'])) ? check_plain($params['field']) : '';
 
-  if (empty($type) || empty($eid) || empty($field) ) {
+  $entity_ids = entity_extract_ids($type, $entity);
+  $entity_id = $entity_ids[0];
+
+  if (empty($type) || empty($eid) || empty($field)) {
     return;
   }
 
@@ -200,12 +220,11 @@ function entityreference_add_child_to_parent_entity_insert($entity, $type) {
   $field_type = $field_info['settings']['target_type'];
   $field_bundle = reset($field_info['settings']['handler_settings']['target_bundles']);
   if ($original_enity_bundle != $field_bundle) {
-      drupal_set_message(t('The entitie\'s bundle does not match the referenced field\'s bundle. The newly created entity is not referenced by its parent.'), 'error');
+    drupal_set_message(t("The entitie's bundle does not match the referenced field's bundle. The newly created entity is not referenced by its parent."), 'error');
     return;
   }
 
-
-  if (!empty($type) && !empty($eid) && !empty($field) ) {
+  if (!empty($type) && !empty($eid) && !empty($field)) {
     if (!is_numeric($eid)) {
       drupal_set_message(t('Invalid Entity id. The newly created entity is not referenced by its parent.'), 'error');
       return;
@@ -213,10 +232,10 @@ function entityreference_add_child_to_parent_entity_insert($entity, $type) {
     $entity_wrapper = entity_metadata_wrapper($type, $eid);
 
     if ($entity_wrapper->value()) {
-      dpm('have identifier');
-      if (isset($entity_wrapper->{$field}) && $entity_wrapper->{$field}->validate(array($entity->id))) {
-        dpm('does validate');
-        $entity_wrapper->{$field}[] = $entity->id;
+      // dpm('have identifier');
+      if (isset($entity_wrapper->{$field}) && $entity_wrapper->{$field}->validate(array($entity_id))) {
+        // dpm('does validate');
+        $entity_wrapper->{$field}[] = $entity_id;
         $entity_wrapper->save();
       }
     }
@@ -226,7 +245,7 @@ function entityreference_add_child_to_parent_entity_insert($entity, $type) {
     }
   }
 
-//throw new Exception("Custom Exception to stop code execution");
+  // throw new Exception("Custom Exception to stop code execution");
 }
 
 /**
@@ -237,8 +256,8 @@ function entityreference_add_child_to_parent_entity_insert($entity, $type) {
  */
 function entityreference_add_child_to_parent_field_delete_instance($instance) {
   // Only act on entity reference fields.
-  $field = field_read_field($instance ['field_name']);
-  if ($field ['type'] != 'entityreference') {
+  $field = field_read_field($instance['field_name']);
+  if ($field['type'] != 'entityreference') {
     return;
   }
 
@@ -247,7 +266,7 @@ function entityreference_add_child_to_parent_field_delete_instance($instance) {
   $field_name = $instance['field_name'];
 
   $mymodule_types = variable_get('entityreference_add_child_to_parent_entity_types', array());
-  if (isset($mymodule_types[$entity_type][$bundle]) && in_array($field_name, $mymodule_types[$entity_type][$bundle]) ) {
+  if (isset($mymodule_types[$entity_type][$bundle]) && in_array($field_name, $mymodule_types[$entity_type][$bundle])) {
     $mymodule_types[$entity_type][$bundle] = array_diff($mymodule_types[$entity_type][$bundle], array($field_name));
     $mymodule_types[$entity_type] = array_filter($mymodule_types[$entity_type]);
     $mymodule_types = array_filter($mymodule_types);
