@@ -191,12 +191,12 @@ function entityreference_add_child_to_parent_entity_insert($entity, $type) {
   $eid = (isset($params['eid'])) ? check_plain($params['eid']) : '';
   $field = (isset($params['field'])) ? check_plain($params['field']) : '';
 
-  $entity_ids = entity_extract_ids($type, $entity);
-  $entity_id = $entity_ids[0];
-
   if (empty($type) || empty($eid) || empty($field)) {
     return;
   }
+
+  $entity_ids = entity_extract_ids($type, $entity);
+  $entity_id = $entity_ids[0];
 
   // Check that the field can be found in the variable:
   // entityreference_add_child_to_parent_entity_types. If not provide an error
